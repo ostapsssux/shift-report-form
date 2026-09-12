@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Отчёт по смене</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  body { font-family: -apple-system, Roboto, sans-serif; padding: 16px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); margin:0; }
+  h2 { font-size: 18px; margin: 20px 0 8px; }
+  h2:first-child { margin-top: 0; }
+  label.field { display: block; margin-bottom: 12px; font-size: 14px; }
+  label.field span { display: block; margin-bottom: 4px; font-weight: 600; }
+  input, select { width: 100%; box-sizing: border-box; padding: 10px; font-size: 15px; border-radius: 8px; border: 1px solid #ccc; }
+  .chk { display: flex; align-items: center; gap: 8px; font-size: 15px; margin-bottom: 8px; font-weight: normal; }
+  .chk input { width: auto; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .err { color: #d33; font-size: 13px; margin-top: 8px; display:none; }
+  button.submit { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 10px;
+    background: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #fff); margin-top: 16px; }
+  #successBox { display:none; text-align:center; padding: 40px 0; font-size: 17px; }
+</style>
+</head>
+<body>
+
+<div id="formWrap">
+
+<h2>Площадка и дата</h2>
+<label class="field"><span>Площадка</span>
+  <select id="object" required>
+    <option value="Метмаш">Метмаш</option>
+    <option value="Пастернака">Пастернака</option>
+    <option value="Северное Тушино">Северное Тушино</option>
+  </select>
+</label>
+<label class="field"><span>Дата смены</span>
+  <input type="date" id="date" required>
+</label>
+
+<h2>Роли (ФИО) — оставьте пустым, если не было на смене</h2>
+<label class="field"><span>Администратор</span><input type="text" id="admin_fio"></label>
+<label class="field"><span>Бригадир</span><input type="text" id="brigadier_fio"></label>
+<label class="field"><span>Агроном</span><input type="text" id="agronomist_fio"></label>
+<label class="field"><span>Координатор</span><input type="text" id="coordinator_fio"></label>
+<label class="field"><span>Старший садовник</span><input type="text" id="senior_gardener_fio"></label>
+<label class="field"><span>Установщик деревьев</span><input type="text" id="tree_installer_fio"></label>
+
+<h2>Состав бригады (чел)</h2>
+<div class="row3">
+  <label class="field"><span>Садовник</span><input type="number" min="0" id="gardener_count" value="0"></label>
+  <label class="field"><span>Монтажник</span><input type="number" min="0" id="installer_count" value="0"></label>
+  <label class="field"><span>Рабочий</span><input type="number" min="0" id="worker_count" value="0"></label>
+</div>
+
+<h2>Смена</h2>
+<div class="row2">
+  <label class="field"><span>Тип смены</span>
+    <select id="shift" required>
+      <option value="Дневная">Дневная</option>
+      <option value="Ночная">Ночная</option>
+    </select>
+  </label>
+  <label class="field"><span>Часов</span><input type="number" min="0" step="0.5" id="hours" value="8"></label>
+</div>
+
+<h2>Вид работ (можно несколько)</h2>
+<label class="chk"><input type="checkbox" name="work_types" value="Монтаж"> Монтаж</label>
+<label class="chk"><input type="checkbox" name="work_types" value="Демонтаж"> Демонтаж</label>
+<label class="chk"><input type="checkbox" name="work_types" value="Посадки"> Посадки</label>
+<label class="chk"><input type="checkbox" name="work_types" value="Пересадка"> Пересадка</label>
+<label class="chk"><input type="checkbox" name="work_types" value="Выемка"> Выемка</label>
+<label class="chk"><input type="checkbox" name="work_types" value="Засыпка"> Засыпка</label>
+
+<h2>Растения (шт)</h2>
+<div class="row3">
+  <label class="field"><span>Деревьев</span><input type="number" min="0" id="trees_count" value="0"></label>
+  <label class="field"><span>Кустов</span><input type="number" min="0" id="bushes_count" value="0"></label>
+  <label class="field"><span>Многолетников</span><input type="number" min="0" id="perennials_count" value="0"></label>
+</div>
+
+<h2>Техника (ед)</h2>
+<div class="row2">
+  <label class="field"><span>Манипулятор</span><input type="number" min="0" id="manipulator_count" value="0"></label>
+  <label class="field"><span>Погрузчик</span><input type="number" min="0" id="loader_count" value="0"></label>
+  <label class="field"><span>Трактор</span><input type="number" min="0" id="tractor_count" value="0"></label>
+  <label class="field"><span>Маниту</span><input type="number" min="0" id="manitou_count" value="0"></label>
+</div>
+
+<h2>Мульчирование</h2>
+<label class="field"><span>Количество, м²</span><input type="number" min="0" step="0.1" id="mulching_m2" value="0"></label>
+
+<div class="err" id="errBox"></div>
+<button class="submit" onclick="submitForm()">Отправить отчёт</button>
+
+</div>
+
+<div id="successBox">✅ Отчёт отправлен!<br><br>Можно закрыть это окно.</div>
+
+<script>
+  // ============ НАСТРОЙКА ============
+  // Вставьте сюда URL вашего Apps Script деплоя (тот же, что для webhook)
+  const GAS_EXEC_URL = 'ВСТАВЬТЕ_СЮДА_URL_ВАШЕГО_WEB_APP';
+
+  window.onerror = function(msg, url, line) {
+    alert('Ошибка в форме: ' + msg + ' (строка ' + line + ')');
+  };
+
+  let tg = null;
+  try {
+    tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+  } catch (e) {
+    // не критично — форма продолжит работать и без Telegram-обёртки
+  }
+
+  document.getElementById('date').valueAsDate = new Date();
+
+  function submitForm() {
+    const errBox = document.getElementById('errBox');
+    errBox.style.display = 'none';
+
+    const object = document.getElementById('object').value;
+    const date = document.getElementById('date').value;
+    const shift = document.getElementById('shift').value;
+    const workTypes = Array.from(document.querySelectorAll('input[name="work_types"]:checked')).map(el => el.value);
+
+    if (!object || !date || !shift) {
+      errBox.textContent = 'Заполните площадку, дату и тип смены.';
+      errBox.style.display = 'block';
+      return;
+    }
+    if (workTypes.length === 0) {
+      errBox.textContent = 'Выберите хотя бы один вид работ.';
+      errBox.style.display = 'block';
+      return;
+    }
+
+    const val = id => document.getElementById(id).value;
+    const num = id => parseFloat(val(id)) || 0;
+
+    const [y, m, dd] = date.split('-');
+    const formattedDate = dd + '.' + m + '.' + y;
+
+    const chatId = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : null;
+
+    const data = {
+      object: object,
+      date: formattedDate,
+      admin_fio: val('admin_fio'),
+      brigadier_fio: val('brigadier_fio'),
+      agronomist_fio: val('agronomist_fio'),
+      coordinator_fio: val('coordinator_fio'),
+      senior_gardener_fio: val('senior_gardener_fio'),
+      tree_installer_fio: val('tree_installer_fio'),
+      gardener_count: num('gardener_count'),
+      installer_count: num('installer_count'),
+      worker_count: num('worker_count'),
+      shift: shift,
+      hours: num('hours'),
+      work_types: workTypes,
+      trees_count: num('trees_count'),
+      bushes_count: num('bushes_count'),
+      perennials_count: num('perennials_count'),
+      manipulator_count: num('manipulator_count'),
+      loader_count: num('loader_count'),
+      tractor_count: num('tractor_count'),
+      manitou_count: num('manitou_count'),
+      mulching_m2: num('mulching_m2'),
+      chat_id: chatId
+    };
+
+    // Отправляем напрямую в Apps Script (без Telegram-мостика — надёжнее)
+    fetch(GAS_EXEC_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // так не будет CORS preflight
+      body: JSON.stringify(data)
+    })
+    .then(() => {
+      document.getElementById('formWrap').style.display = 'none';
+      document.getElementById('successBox').style.display = 'block';
+      if (tg && tg.close) setTimeout(() => tg.close(), 1200);
+    })
+    .catch(err => {
+      errBox.textContent = 'Не удалось отправить: ' + err.message + '. Попробуйте ещё раз.';
+      errBox.style.display = 'block';
+    });
+  }
+</script>
+</body>
+</html>
