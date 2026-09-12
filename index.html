@@ -1,192 +1,501 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Отчёт по смене</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  body { font-family: -apple-system, Roboto, sans-serif; padding: 16px; background: var(--tg-theme-bg-color, #fff); color: var(--tg-theme-text-color, #000); margin:0; }
-  h2 { font-size: 18px; margin: 20px 0 8px; }
-  h2:first-child { margin-top: 0; }
-  label.field { display: block; margin-bottom: 12px; font-size: 14px; }
-  label.field span { display: block; margin-bottom: 4px; font-weight: 600; }
-  input, select { width: 100%; box-sizing: border-box; padding: 10px; font-size: 15px; border-radius: 8px; border: 1px solid #ccc; }
-  .chk { display: flex; align-items: center; gap: 8px; font-size: 15px; margin-bottom: 8px; font-weight: normal; }
-  .chk input { width: auto; }
-  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .err { color: #d33; font-size: 13px; margin-top: 8px; display:none; }
-  button.submit { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; border: none; border-radius: 10px;
-    background: var(--tg-theme-button-color, #2481cc); color: var(--tg-theme-button-text-color, #fff); margin-top: 16px; }
-  #successBox { display:none; text-align:center; padding: 40px 0; font-size: 17px; }
+  :root {
+    --bg:         #EDF3EA;
+    --bg-deep:    #D9E7D3;
+    --ink:        #14311F;
+    --ink-soft:   #5B7565;
+    --grass:      #34A853;
+    --grass-hi:   #56CC71;
+    --grass-deep: #1B7536;
+    --lime:       #9BE054;
+    --clay:       #D9533B;
+
+    --sh-1: 0 1px 2px rgba(20,49,31,.05), 0 2px 8px rgba(20,49,31,.045);
+    --sh-2: 0 2px 4px rgba(20,49,31,.06), 0 10px 24px rgba(20,49,31,.075);
+    --sh-3: 0 6px 14px rgba(20,49,31,.10), 0 20px 46px rgba(20,49,31,.13);
+    --sh-grass: 0 2px 6px rgba(27,117,54,.26), 0 10px 26px rgba(27,117,54,.28);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; min-width: 0; }
+
+  body {
+    font-family: 'Manrope', -apple-system, sans-serif;
+    background:
+      radial-gradient(1200px 620px at 8% -10%, #FCFFFA 0%, transparent 55%),
+      radial-gradient(880px 500px at 104% 2%, #CFE8CA 0%, transparent 58%),
+      radial-gradient(700px 700px at 50% 108%, #C9E2C4 0%, transparent 62%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    margin: 0;
+    padding: 0 16px 132px;
+    font-size: 16px; line-height: 1.45;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ——— Стеклянный заголовок ——— */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    margin: 0 -16px; padding: 22px 20px 15px;
+    background: linear-gradient(180deg, rgba(240,246,237,.88) 0%, rgba(237,243,234,.68) 100%);
+    backdrop-filter: saturate(190%) blur(24px);
+    -webkit-backdrop-filter: saturate(190%) blur(24px);
+    border-bottom: 1px solid rgba(20,49,31,.06);
+  }
+  header h1 { font-size: 27px; font-weight: 800; letter-spacing: -.03em; margin: 0 0 2px; }
+  header p { margin: 0; color: var(--ink-soft); font-size: 13.5px; font-weight: 500; }
+
+  /* ——— Панели ——— */
+  section {
+    background: linear-gradient(168deg, #FFFFFF 0%, #FBFDFA 55%, #F5FAF3 100%);
+    border-radius: 22px; padding: 18px; margin: 14px 0;
+    box-shadow: var(--sh-2), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  section > h2 {
+    font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
+    margin: 0 0 13px; letter-spacing: .01em;
+  }
+
+  /* ——— Карточки ——— */
+  .cards { display: grid; gap: 9px; }
+  .cards.two { grid-template-columns: 1fr 1fr; }
+  .card {
+    min-width: 0;                       /* чтобы длинный текст не выдавливал карточку */
+    background: linear-gradient(165deg, #F8FBF6 0%, #EFF5EC 100%);
+    border-radius: 16px; padding: 15px 16px;
+    font-weight: 600; font-size: 15.5px;
+    cursor: pointer; display: flex; align-items: center; gap: 11px;
+    box-shadow: var(--sh-1), inset 0 1px 0 rgba(255,255,255,.8);
+    transition: transform .16s cubic-bezier(.34,1.7,.5,1), box-shadow .2s, background .2s, color .2s;
+  }
+  .card span.lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .card:active { transform: scale(.965); }
+  .card.on {
+    background: linear-gradient(158deg, var(--grass-hi) 0%, var(--grass) 48%, var(--grass-deep) 100%);
+    color: #fff;
+    box-shadow: var(--sh-grass), inset 0 1px 0 rgba(255,255,255,.32);
+    transform: translateY(-1px);
+  }
+  /* кружок: настоящая рамка вместо inset-тени — ровный край */
+  .card .dot {
+    width: 20px; height: 20px; flex: 0 0 20px;
+    border-radius: 50%; background: #fff;
+    border: 1.5px solid rgba(20,49,31,.17);
+    display: grid; place-items: center;
+    transition: border-color .2s;
+  }
+  .card.on .dot { border-color: #fff; }
+  .card.on .dot::after {
+    content: ''; width: 9px; height: 9px; border-radius: 50%;
+    background: linear-gradient(160deg, var(--grass), var(--grass-deep));
+  }
+
+  /* ——— Теги ——— */
+  .tags { display: flex; flex-wrap: wrap; gap: 9px; }
+  .tag {
+    background: linear-gradient(165deg, #F8FBF6, #EFF5EC);
+    border-radius: 100px; padding: 11px 17px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    box-shadow: var(--sh-1), inset 0 1px 0 rgba(255,255,255,.8);
+    transition: transform .16s cubic-bezier(.34,1.7,.5,1), box-shadow .2s, background .2s, color .2s;
+  }
+  .tag:active { transform: scale(.93); }
+  .tag.on {
+    background: linear-gradient(158deg, var(--lime) 0%, var(--grass) 55%, var(--grass-deep) 100%);
+    color: #fff;
+    box-shadow: var(--sh-grass), inset 0 1px 0 rgba(255,255,255,.3);
+    transform: translateY(-1px);
+  }
+
+  /* ——— Поля ——— */
+  .fld { margin-bottom: 11px; }
+  .fld:last-child { margin-bottom: 0; }
+  .fld label {
+    display: block; font-size: 13.5px; color: var(--ink-soft);
+    margin-bottom: 6px; font-weight: 600;
+  }
+  input[type=text], input[type=date], input[type=number] {
+    display: block;
+    width: 100%; max-width: 100%; min-width: 0;
+    -webkit-appearance: none; appearance: none;   /* снимает врождённую ширину date в Safari */
+    font-family: inherit; font-size: 16px; font-weight: 600;
+    text-align: left;
+    color: var(--ink);
+    background: linear-gradient(170deg, #F4F9F2 0%, #EDF4EA 100%);
+    border: 1.5px solid transparent; border-radius: 14px;
+    padding: 14px 15px;
+    box-shadow: inset 0 1px 3px rgba(20,49,31,.055);
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  input[type=date] { min-height: 51px; }
+  input:focus {
+    outline: none;
+    background: linear-gradient(170deg, #FFFFFF, #F8FCF7);
+    border-color: var(--grass);
+    box-shadow: 0 0 0 4px rgba(52,168,83,.15);
+  }
+  input::placeholder { color: #A9B8A6; font-weight: 500; }
+  input::-webkit-date-and-time-value { text-align: left; }
+  input::-webkit-calendar-picker-indicator { opacity: .55; }
+
+  /* ——— Счётчики ——— */
+  .count {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: linear-gradient(170deg, #F8FBF6, #EEF5EB);
+    border-radius: 16px; padding: 8px 9px 8px 16px; margin-bottom: 9px;
+    box-shadow: var(--sh-1), inset 0 1px 0 rgba(255,255,255,.8);
+    transition: background .25s, box-shadow .25s;
+  }
+  .count:last-child { margin-bottom: 0; }
+  .count.hot {
+    background: linear-gradient(165deg, #FFFFFF 0%, #ECFAE8 100%);
+    box-shadow: var(--sh-2), inset 0 0 0 1.5px rgba(52,168,83,.32);
+  }
+  .count .cname {
+    font-weight: 600; font-size: 15.5px; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .count.zero .cname { color: #9DAE9B; font-weight: 500; }
+  .count .ctrl { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+  .count button {
+    width: 40px; height: 40px; flex: 0 0 40px;
+    border-radius: 13px; border: none;
+    background: linear-gradient(165deg, #FFFFFF, #F2F8EF);
+    color: var(--grass-deep);
+    font-size: 22px; font-weight: 700; font-family: inherit; line-height: 1;
+    cursor: pointer;
+    box-shadow: var(--sh-1), inset 0 1px 0 rgba(255,255,255,.9);
+    transition: transform .14s cubic-bezier(.34,1.8,.5,1), background .15s, color .15s;
+  }
+  .count button:active {
+    transform: scale(.86);
+    background: linear-gradient(158deg, var(--grass-hi), var(--grass-deep));
+    color: #fff;
+  }
+  .count input {
+    width: 52px; flex: 0 0 52px; text-align: center;
+    border: none; background: transparent; box-shadow: none;
+    font-family: inherit; font-size: 19px; font-weight: 800; color: var(--ink);
+    padding: 0; -moz-appearance: textfield;
+  }
+  .count.zero input { color: #A9B8A6; }
+  .count input::-webkit-outer-spin-button,
+  .count input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .count input:focus {
+    outline: none; background: transparent; box-shadow: none; border-color: transparent;
+  }
+
+  /* ——— Подвал ——— */
+  footer {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+    padding: 20px 16px 26px;
+    background: linear-gradient(to top, var(--bg-deep) 0%, rgba(217,231,211,.96) 48%, rgba(217,231,211,0) 100%);
+  }
+  #send {
+    width: 100%; border: none; border-radius: 18px;
+    background: linear-gradient(160deg, var(--grass-hi) 0%, var(--grass) 45%, var(--grass-deep) 100%);
+    color: #fff; font-family: inherit; font-size: 17.5px; font-weight: 700;
+    padding: 18px; cursor: pointer; letter-spacing: -.01em;
+    box-shadow: var(--sh-grass), inset 0 1px 0 rgba(255,255,255,.34);
+    transition: transform .17s cubic-bezier(.34,1.6,.5,1), box-shadow .2s, filter .2s;
+  }
+  #send:active { transform: scale(.972); filter: brightness(.93); }
+  #send:disabled {
+    background: linear-gradient(160deg, #C8D5C4, #B3C2AF);
+    box-shadow: var(--sh-1); transform: none;
+  }
+
+  .err {
+    display: none; color: var(--clay); font-size: 14px; font-weight: 600;
+    margin-bottom: 11px; text-align: center;
+    background: linear-gradient(170deg, #FFFFFF, #FFF4F1);
+    border-radius: 12px; padding: 11px; box-shadow: var(--sh-1);
+  }
+
+  /* ——— Успех ——— */
+  #done { display: none; padding: 110px 0; text-align: center; }
+  #done .mark {
+    width: 78px; height: 78px; margin: 0 auto 24px; border-radius: 50%;
+    background: linear-gradient(158deg, var(--grass-hi) 0%, var(--grass) 45%, var(--grass-deep) 100%);
+    display: grid; place-items: center;
+    box-shadow: var(--sh-3), inset 0 2px 0 rgba(255,255,255,.35);
+    animation: pop .55s cubic-bezier(.2,1.5,.4,1) both;
+  }
+  #done .mark svg { width: 36px; height: 36px; }
+  #done .mark svg path {
+    stroke-dasharray: 30; stroke-dashoffset: 30;
+    animation: draw .4s .22s ease-out forwards;
+  }
+  #done h2 { font-size: 23px; font-weight: 800; margin: 0 0 6px; letter-spacing: -.02em; }
+  #done p { color: var(--ink-soft); margin: 0; font-size: 15px; font-weight: 500; }
+  @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
 </style>
 </head>
 <body>
 
-<div id="formWrap">
+<div id="app">
 
-<h2>Площадка и дата</h2>
-<label class="field"><span>Площадка</span>
-  <select id="object" required>
-    <option value="Метмаш">Метмаш</option>
-    <option value="Пастернака">Пастернака</option>
-    <option value="Северное Тушино">Северное Тушино</option>
-  </select>
-</label>
-<label class="field"><span>Дата смены</span>
-  <input type="date" id="date" required>
-</label>
+  <header>
+    <h1>Отчёт по смене</h1>
+    <p>Заполните и отправьте — данные уйдут в таблицу</p>
+  </header>
 
-<h2>Роли (ФИО) — оставьте пустым, если не было на смене</h2>
-<label class="field"><span>Администратор</span><input type="text" id="admin_fio"></label>
-<label class="field"><span>Бригадир</span><input type="text" id="brigadier_fio"></label>
-<label class="field"><span>Агроном</span><input type="text" id="agronomist_fio"></label>
-<label class="field"><span>Координатор</span><input type="text" id="coordinator_fio"></label>
-<label class="field"><span>Старший садовник</span><input type="text" id="senior_gardener_fio"></label>
-<label class="field"><span>Установщик деревьев</span><input type="text" id="tree_installer_fio"></label>
+  <section>
+    <h2>Площадка</h2>
+    <div class="cards" id="objectCards"></div>
+  </section>
 
-<h2>Состав бригады (чел)</h2>
-<div class="row3">
-  <label class="field"><span>Садовник</span><input type="number" min="0" id="gardener_count" value="0"></label>
-  <label class="field"><span>Монтажник</span><input type="number" min="0" id="installer_count" value="0"></label>
-  <label class="field"><span>Рабочий</span><input type="number" min="0" id="worker_count" value="0"></label>
-</div>
+  <section>
+    <h2>Дата смены</h2>
+    <div class="fld"><input type="date" id="date"></div>
+  </section>
 
-<h2>Смена</h2>
-<div class="row2">
-  <label class="field"><span>Тип смены</span>
-    <select id="shift" required>
-      <option value="Дневная">Дневная</option>
-      <option value="Ночная">Ночная</option>
-    </select>
-  </label>
-  <label class="field"><span>Часов</span><input type="number" min="0" step="0.5" id="hours" value="8"></label>
-</div>
+  <section>
+    <h2>Смена</h2>
+    <div class="cards two" id="shiftCards"></div>
+    <div class="fld" style="margin-top:10px">
+      <label for="hours">Отработано часов</label>
+      <input type="number" id="hours" min="0" step="0.5" value="8" inputmode="decimal">
+    </div>
+  </section>
 
-<h2>Вид работ (можно несколько)</h2>
-<label class="chk"><input type="checkbox" name="work_types" value="Монтаж"> Монтаж</label>
-<label class="chk"><input type="checkbox" name="work_types" value="Демонтаж"> Демонтаж</label>
-<label class="chk"><input type="checkbox" name="work_types" value="Посадки"> Посадки</label>
-<label class="chk"><input type="checkbox" name="work_types" value="Пересадка"> Пересадка</label>
-<label class="chk"><input type="checkbox" name="work_types" value="Выемка"> Выемка</label>
-<label class="chk"><input type="checkbox" name="work_types" value="Засыпка"> Засыпка</label>
+  <section>
+    <h2>Вид работ</h2>
+    <div class="tags" id="workTags"></div>
+  </section>
 
-<h2>Растения (шт)</h2>
-<div class="row3">
-  <label class="field"><span>Деревьев</span><input type="number" min="0" id="trees_count" value="0"></label>
-  <label class="field"><span>Кустов</span><input type="number" min="0" id="bushes_count" value="0"></label>
-  <label class="field"><span>Многолетников</span><input type="number" min="0" id="perennials_count" value="0"></label>
-</div>
+  <section>
+    <h2>Руководящий состав — оставьте пустым, если не было на смене</h2>
+    <div id="roleFields"></div>
+  </section>
 
-<h2>Техника (ед)</h2>
-<div class="row2">
-  <label class="field"><span>Манипулятор</span><input type="number" min="0" id="manipulator_count" value="0"></label>
-  <label class="field"><span>Погрузчик</span><input type="number" min="0" id="loader_count" value="0"></label>
-  <label class="field"><span>Трактор</span><input type="number" min="0" id="tractor_count" value="0"></label>
-  <label class="field"><span>Маниту</span><input type="number" min="0" id="manitou_count" value="0"></label>
-</div>
+  <section>
+    <h2>Состав бригады</h2>
+    <div id="crewCounts"></div>
+  </section>
 
-<h2>Мульчирование</h2>
-<label class="field"><span>Количество, м²</span><input type="number" min="0" step="0.1" id="mulching_m2" value="0"></label>
+  <section>
+    <h2>Растения</h2>
+    <div id="plantCounts"></div>
+  </section>
 
-<div class="err" id="errBox"></div>
-<button class="submit" onclick="submitForm()">Отправить отчёт</button>
+  <section>
+    <h2>Техника</h2>
+    <div id="techCounts"></div>
+  </section>
+
+  <section>
+    <h2>Мульчирование</h2>
+    <div class="fld">
+      <label for="mulching_m2">Площадь, м²</label>
+      <input type="number" id="mulching_m2" min="0" step="0.1" value="0" inputmode="decimal">
+    </div>
+  </section>
 
 </div>
 
-<div id="successBox">✅ Отчёт отправлен!<br><br>Можно закрыть это окно.</div>
+<div id="done">
+  <div class="mark">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5.5 5.5L20 7"/></svg>
+  </div>
+  <h2>Отчёт отправлен</h2>
+  <p>Строка добавлена в таблицу</p>
+</div>
+
+<footer id="bar">
+  <div class="err" id="err"></div>
+  <button id="send">Отправить отчёт</button>
+</footer>
 
 <script>
-  // ============ НАСТРОЙКА ============
-  // Вставьте сюда URL вашего Apps Script деплоя (тот же, что для webhook)
-  const GAS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbx7WyoUoHFQYQGQ55neCNMEsVE8bAYxpO3SjnbOaxyTqplgx7RC9pAZiaICnKEAlVbA/exec';
+// ============ НАСТРОЙКА ============
+const GAS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbx7WyoUoHFQYQGQ55neCNMEsVE8bAYxpO3SjnbOaxyTqplgx7RC9pAZiaICnKEAlVbA/exec';
 
-  window.onerror = function(msg, url, line) {
-    alert('Ошибка в форме: ' + msg + ' (строка ' + line + ')');
-  };
+const OBJECTS = ['Метмаш', 'Пастернака', 'Северное Тушино'];
+const SHIFTS  = ['Дневная', 'Ночная'];
+const WORKS   = ['Монтаж', 'Демонтаж', 'Посадки', 'Пересадка', 'Выемка', 'Засыпка'];
 
-  let tg = null;
-  try {
-    tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-  } catch (e) {
-    // не критично — форма продолжит работать и без Telegram-обёртки
-  }
+const ROLES = [
+  ['admin_fio', 'Администратор'],
+  ['brigadier_fio', 'Бригадир'],
+  ['agronomist_fio', 'Агроном'],
+  ['coordinator_fio', 'Координатор'],
+  ['senior_gardener_fio', 'Старший садовник'],
+  ['tree_installer_fio', 'Установщик деревьев']
+];
+const CREW   = [['gardener_count','Садовник'], ['installer_count','Монтажник'], ['worker_count','Рабочий']];
+const PLANTS = [['trees_count','Деревья'], ['bushes_count','Кусты'], ['perennials_count','Многолетники']];
+const TECH   = [['manipulator_count','Манипулятор'], ['loader_count','Погрузчик'], ['tractor_count','Трактор'], ['manitou_count','Маниту']];
 
-  document.getElementById('date').valueAsDate = new Date();
+let tg = null;
+try { tg = window.Telegram.WebApp; tg.ready(); tg.expand(); } catch (e) {}
+function haptic(kind) {
+  if (!tg || !tg.HapticFeedback) return;
+  if (kind === 'sel') tg.HapticFeedback.selectionChanged();
+  else tg.HapticFeedback.notificationOccurred(kind);
+}
 
-  function submitForm() {
-    const errBox = document.getElementById('errBox');
-    errBox.style.display = 'none';
+const state = { object: OBJECTS[0], shift: SHIFTS[0], works: [] };
 
-    const object = document.getElementById('object').value;
-    const date = document.getElementById('date').value;
-    const shift = document.getElementById('shift').value;
-    const workTypes = Array.from(document.querySelectorAll('input[name="work_types"]:checked')).map(el => el.value);
+// ——— Память ФИО ———
+const MEM_KEY = 'fio_memory_v1';
+function loadMemory() {
+  try { return JSON.parse(localStorage.getItem(MEM_KEY)) || {}; } catch (e) { return {}; }
+}
+function rememberFio(roleKey, value) {
+  if (!value || value.trim().length < 3) return;
+  const mem = loadMemory();
+  const v = value.trim();
+  const list = (mem[roleKey] || []).filter(x => x !== v);
+  list.unshift(v);
+  mem[roleKey] = list.slice(0, 8);
+  try { localStorage.setItem(MEM_KEY, JSON.stringify(mem)); } catch (e) {}
+}
 
-    if (!object || !date || !shift) {
-      errBox.textContent = 'Заполните площадку, дату и тип смены.';
-      errBox.style.display = 'block';
-      return;
-    }
-    if (workTypes.length === 0) {
-      errBox.textContent = 'Выберите хотя бы один вид работ.';
-      errBox.style.display = 'block';
-      return;
-    }
+// ——— Интерфейс ———
+function buildCards(container, items, key) {
+  container.innerHTML = items.map(v =>
+    `<div class="card${state[key] === v ? ' on' : ''}" data-v="${v}"><span class="dot"></span><span class="lbl">${v}</span></div>`
+  ).join('');
+  container.querySelectorAll('.card').forEach(el => {
+    el.onclick = () => { state[key] = el.dataset.v; haptic('sel'); buildCards(container, items, key); };
+  });
+}
+buildCards(document.getElementById('objectCards'), OBJECTS, 'object');
+buildCards(document.getElementById('shiftCards'), SHIFTS, 'shift');
 
-    const val = id => document.getElementById(id).value;
-    const num = id => parseFloat(val(id)) || 0;
-
-    const [y, m, dd] = date.split('-');
-    const formattedDate = dd + '.' + m + '.' + y;
-
-    const chatId = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : null;
-
-    const data = {
-      object: object,
-      date: formattedDate,
-      admin_fio: val('admin_fio'),
-      brigadier_fio: val('brigadier_fio'),
-      agronomist_fio: val('agronomist_fio'),
-      coordinator_fio: val('coordinator_fio'),
-      senior_gardener_fio: val('senior_gardener_fio'),
-      tree_installer_fio: val('tree_installer_fio'),
-      gardener_count: num('gardener_count'),
-      installer_count: num('installer_count'),
-      worker_count: num('worker_count'),
-      shift: shift,
-      hours: num('hours'),
-      work_types: workTypes,
-      trees_count: num('trees_count'),
-      bushes_count: num('bushes_count'),
-      perennials_count: num('perennials_count'),
-      manipulator_count: num('manipulator_count'),
-      loader_count: num('loader_count'),
-      tractor_count: num('tractor_count'),
-      manitou_count: num('manitou_count'),
-      mulching_m2: num('mulching_m2'),
-      chat_id: chatId
+const tagBox = document.getElementById('workTags');
+function buildTags() {
+  tagBox.innerHTML = WORKS.map(w =>
+    `<div class="tag${state.works.includes(w) ? ' on' : ''}" data-v="${w}">${w}</div>`
+  ).join('');
+  tagBox.querySelectorAll('.tag').forEach(el => {
+    el.onclick = () => {
+      const v = el.dataset.v;
+      const i = state.works.indexOf(v);
+      if (i === -1) state.works.push(v); else state.works.splice(i, 1);
+      haptic('sel'); buildTags();
     };
+  });
+}
+buildTags();
 
-    // Отправляем напрямую в Apps Script (без Telegram-мостика — надёжнее)
-    fetch(GAS_EXEC_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // так не будет CORS preflight
-      body: JSON.stringify(data)
-    })
-    .then(() => {
-      document.getElementById('formWrap').style.display = 'none';
-      document.getElementById('successBox').style.display = 'block';
-      if (tg && tg.close) setTimeout(() => tg.close(), 1200);
-    })
-    .catch(err => {
-      errBox.textContent = 'Не удалось отправить: ' + err.message + '. Попробуйте ещё раз.';
-      errBox.style.display = 'block';
-    });
-  }
+const mem = loadMemory();
+document.getElementById('roleFields').innerHTML = ROLES.map(([k, label]) => {
+  const opts = (mem[k] || []).map(v => `<option value="${v}">`).join('');
+  return `<div class="fld">
+    <label for="${k}">${label}</label>
+    <input type="text" id="${k}" list="dl_${k}" placeholder="Имя и фамилия" autocomplete="off">
+    <datalist id="dl_${k}">${opts}</datalist>
+  </div>`;
+}).join('');
+
+function buildCounts(containerId, items) {
+  document.getElementById(containerId).innerHTML = items.map(([k, label]) =>
+    `<div class="count zero" id="row_${k}">
+      <span class="cname">${label}</span>
+      <span class="ctrl">
+        <button type="button" data-k="${k}" data-d="-1">−</button>
+        <input type="number" id="${k}" value="0" min="0" inputmode="numeric">
+        <button type="button" data-k="${k}" data-d="1">+</button>
+      </span>
+    </div>`
+  ).join('');
+}
+buildCounts('crewCounts', CREW);
+buildCounts('plantCounts', PLANTS);
+buildCounts('techCounts', TECH);
+
+function paintRow(key, n) {
+  const row = document.getElementById('row_' + key);
+  row.classList.toggle('zero', n === 0);
+  row.classList.toggle('hot', n > 0);
+}
+document.querySelectorAll('.count button').forEach(btn => {
+  btn.onclick = () => {
+    const inp = document.getElementById(btn.dataset.k);
+    const next = Math.max(0, (parseInt(inp.value, 10) || 0) + parseInt(btn.dataset.d, 10));
+    inp.value = next;
+    paintRow(btn.dataset.k, next);
+    haptic('sel');
+  };
+});
+document.querySelectorAll('.count input').forEach(inp => {
+  inp.oninput = () => paintRow(inp.id, parseInt(inp.value, 10) || 0);
+});
+
+document.getElementById('date').valueAsDate = new Date();
+
+// ——— Отправка ———
+const errBox = document.getElementById('err');
+const sendBtn = document.getElementById('send');
+
+sendBtn.onclick = () => {
+  errBox.style.display = 'none';
+
+  const date = document.getElementById('date').value;
+  if (!date) return fail('Укажите дату смены');
+  if (state.works.length === 0) return fail('Выберите хотя бы один вид работ');
+
+  const val = id => (document.getElementById(id).value || '').trim();
+  const num = id => parseFloat(document.getElementById(id).value) || 0;
+
+  const [y, m, d] = date.split('-');
+  const payload = {
+    object: state.object,
+    date: d + '.' + m + '.' + y,
+    shift: state.shift,
+    hours: num('hours'),
+    work_types: state.works,
+    mulching_m2: num('mulching_m2'),
+    chat_id: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : null
+  };
+  ROLES.forEach(([k]) => { payload[k] = val(k); rememberFio(k, val(k)); });
+  CREW.concat(PLANTS, TECH).forEach(([k]) => { payload[k] = num(k); });
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Отправляем…';
+
+  fetch(GAS_EXEC_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    haptic('success');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('bar').style.display = 'none';
+    document.getElementById('done').style.display = 'block';
+    if (tg && tg.close) setTimeout(() => tg.close(), 1800);
+  })
+  .catch(() => {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Отправить отчёт';
+    fail('Не удалось отправить. Проверьте связь и попробуйте снова');
+  });
+};
+
+function fail(msg) {
+  errBox.textContent = msg;
+  errBox.style.display = 'block';
+  haptic('error');
+}
 </script>
 </body>
 </html>
