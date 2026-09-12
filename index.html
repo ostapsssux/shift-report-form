@@ -66,12 +66,16 @@
     font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
     margin: 0 0 13px; letter-spacing: .01em;
   }
+  section > .hint {
+    font-size: 12.5px; color: var(--ink-soft); font-weight: 500;
+    margin: -6px 0 13px; line-height: 1.35;
+  }
 
   /* ——— Карточки ——— */
   .cards { display: grid; gap: 9px; }
   .cards.two { grid-template-columns: 1fr 1fr; }
   .card {
-    min-width: 0;                       /* чтобы длинный текст не выдавливал карточку */
+    min-width: 0;
     background: linear-gradient(165deg, #F8FBF6 0%, #EFF5EC 100%);
     border-radius: 16px; padding: 15px 16px;
     font-weight: 600; font-size: 15.5px;
@@ -87,7 +91,6 @@
     box-shadow: var(--sh-grass), inset 0 1px 0 rgba(255,255,255,.32);
     transform: translateY(-1px);
   }
-  /* кружок: настоящая рамка вместо inset-тени — ровный край */
   .card .dot {
     width: 20px; height: 20px; flex: 0 0 20px;
     border-radius: 50%; background: #fff;
@@ -125,10 +128,10 @@
     display: block; font-size: 13.5px; color: var(--ink-soft);
     margin-bottom: 6px; font-weight: 600;
   }
-  input[type=text], input[type=date], input[type=number] {
+  input[type=text], input[type=date], input[type=number], select, textarea {
     display: block;
     width: 100%; max-width: 100%; min-width: 0;
-    -webkit-appearance: none; appearance: none;   /* снимает врождённую ширину date в Safari */
+    -webkit-appearance: none; appearance: none;
     font-family: inherit; font-size: 16px; font-weight: 600;
     text-align: left;
     color: var(--ink);
@@ -139,15 +142,48 @@
     transition: border-color .2s, box-shadow .2s, background .2s;
   }
   input[type=date] { min-height: 51px; }
-  input:focus {
+
+  /* выпадающий список площадки */
+  select {
+    padding-right: 42px;
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B7565' stroke-width='2.5' stroke-linecap='round'><path d='M6 9l6 6 6-6'/></svg>"),
+      linear-gradient(170deg, #F4F9F2 0%, #EDF4EA 100%);
+    background-repeat: no-repeat, no-repeat;
+    background-position: right 14px center, center;
+    background-size: 19px, auto;
+    line-height: 1.3;
+  }
+
+  textarea {
+    min-height: 92px; resize: vertical; line-height: 1.45;
+    font-weight: 500;
+  }
+
+  input:focus, select:focus, textarea:focus {
     outline: none;
-    background: linear-gradient(170deg, #FFFFFF, #F8FCF7);
+    background-color: #fff;
+    background-image: none;
     border-color: var(--grass);
     box-shadow: 0 0 0 4px rgba(52,168,83,.15);
   }
-  input::placeholder { color: #A9B8A6; font-weight: 500; }
+  select:focus {
+    background-image:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B7565' stroke-width='2.5' stroke-linecap='round'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 19px;
+  }
+  input::placeholder, textarea::placeholder { color: #A9B8A6; font-weight: 500; }
   input::-webkit-date-and-time-value { text-align: left; }
   input::-webkit-calendar-picker-indicator { opacity: .55; }
+
+  /* поле с ошибкой */
+  .fld.bad input, .fld.bad select, .fld.bad textarea {
+    border-color: var(--clay);
+    box-shadow: 0 0 0 4px rgba(217,83,59,.13);
+  }
+  .fld .req { color: var(--clay); }
 
   /* ——— Счётчики ——— */
   .count {
@@ -258,19 +294,21 @@
 
   <section>
     <h2>Площадка</h2>
-    <div class="cards" id="objectCards"></div>
+    <div class="fld" id="fld_object">
+      <select id="object"></select>
+    </div>
   </section>
 
   <section>
     <h2>Дата смены</h2>
-    <div class="fld"><input type="date" id="date"></div>
+    <div class="fld" id="fld_date"><input type="date" id="date"></div>
   </section>
 
   <section>
     <h2>Смена</h2>
     <div class="cards two" id="shiftCards"></div>
-    <div class="fld" style="margin-top:10px">
-      <label for="hours">Отработано часов</label>
+    <div class="fld" id="fld_hours" style="margin-top:10px">
+      <label for="hours">Отработано часов <span class="req">*</span></label>
       <input type="number" id="hours" min="0" step="0.5" value="8" inputmode="decimal">
     </div>
   </section>
@@ -281,7 +319,8 @@
   </section>
 
   <section>
-    <h2>Руководящий состав — оставьте пустым, если не было на смене</h2>
+    <h2>Руководящий состав</h2>
+    <p class="hint">Все поля обязательны. Если сотрудника этой роли на смене не было — поставьте прочерк «—».</p>
     <div id="roleFields"></div>
   </section>
 
@@ -302,9 +341,17 @@
 
   <section>
     <h2>Мульчирование</h2>
-    <div class="fld">
-      <label for="mulching_m2">Площадь, м²</label>
+    <div class="fld" id="fld_mulching_m2">
+      <label for="mulching_m2">Площадь, м² <span class="req">*</span></label>
       <input type="number" id="mulching_m2" min="0" step="0.1" value="0" inputmode="decimal">
+    </div>
+  </section>
+
+  <section>
+    <h2>Комментарий</h2>
+    <p class="hint">Необязательно. Что-то важное по смене: задержки, проблемы, замечания.</p>
+    <div class="fld">
+      <textarea id="comment" placeholder="Можно оставить пустым"></textarea>
     </div>
   </section>
 
@@ -327,7 +374,42 @@
 // ============ НАСТРОЙКА ============
 const GAS_EXEC_URL = 'https://script.google.com/macros/s/AKfycbxGBznPGOYEfxPbub8qMfXR4FcyBKhk2OnfBTINp_Yr_e1z2MuNKuVaCQsPHZmhCjKa/exec';
 
-const OBJECTS = ['Метмаш', 'Пастернака', 'Северное Тушино'];
+// Площадки. Сортируются по алфавиту автоматически — новые можно дописывать в любое место.
+const OBJECTS = [
+  'Большой Каменный мост',
+  'Вознесенский переулок, д. 21, д. 22',
+  'Кадашёвская набережная',
+  'Краснопресненская набережная',
+  'Кремлёвская набережная',
+  'Крымская набережная',
+  'Манежная площадь',
+  'Метмаш',
+  'Москворецкий мост',
+  'Новоарбатский мост',
+  'Пастернака',
+  'Патриарший мост',
+  'Переход от Манежной площади к площади Революции',
+  'площадь Воровского',
+  'площадь Революции',
+  'площадь у гостиницы «Украина»',
+  'площадь у Киевского вокзала',
+  'Северное Тушино',
+  'Столешников 2-8',
+  'Столешников 10-14',
+  'Страстной бульвар, д. 10, стр. 1 (площадь у Союза театральных деятелей РФ)',
+  'Театральная площадь (у Большого театра)',
+  'Триумфальная площадь',
+  'ул. Большая Грузинская, д. 1, стр. 1 (Московский зоопарк)',
+  'ул. Большая Лубянка, д. 1, стр. 1',
+  'ул. Воздвиженка, д. 3/5 (РГБ)',
+  'ул. Новый Арбат, вл. 8-16, 22-28',
+  'ул. Новый Арбат, вл. 13-21',
+  'ул. Тверская (от Моховой до Пушкинской площади)',
+  'ул. Чаплыгина, д. 1А, стр. 1 (двор исторической сцены театра Олега Табакова)',
+  'Цветной бульвар',
+  'Чистопрудный бульвар, д. 19, стр. 1 (театр «Современник»)'
+].sort((a, b) => a.localeCompare(b, 'ru'));
+
 const SHIFTS  = ['Дневная', 'Ночная'];
 const WORKS   = ['Монтаж', 'Демонтаж', 'Посадки', 'Пересадка', 'Выемка', 'Засыпка'];
 
@@ -351,7 +433,7 @@ function haptic(kind) {
   else tg.HapticFeedback.notificationOccurred(kind);
 }
 
-const state = { object: OBJECTS[0], shift: SHIFTS[0], works: [] };
+const state = { shift: SHIFTS[0], works: [] };
 
 // ——— Память ФИО ———
 const MEM_KEY = 'fio_memory_v1';
@@ -359,7 +441,7 @@ function loadMemory() {
   try { return JSON.parse(localStorage.getItem(MEM_KEY)) || {}; } catch (e) { return {}; }
 }
 function rememberFio(roleKey, value) {
-  if (!value || value.trim().length < 3) return;
+  if (!value || value.trim().length < 3 || value.trim() === '—' || value.trim() === '-') return;
   const mem = loadMemory();
   const v = value.trim();
   const list = (mem[roleKey] || []).filter(x => x !== v);
@@ -368,22 +450,35 @@ function rememberFio(roleKey, value) {
   try { localStorage.setItem(MEM_KEY, JSON.stringify(mem)); } catch (e) {}
 }
 
-// ——— Интерфейс ———
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ——— Площадка: выпадающий список ———
+const objSelect = document.getElementById('object');
+objSelect.innerHTML = '<option value="" disabled selected>Выберите площадку</option>' +
+  OBJECTS.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+objSelect.onchange = () => {
+  document.getElementById('fld_object').classList.remove('bad');
+  haptic('sel');
+};
+
+// ——— Смена: карточки ———
 function buildCards(container, items, key) {
   container.innerHTML = items.map(v =>
-    `<div class="card${state[key] === v ? ' on' : ''}" data-v="${v}"><span class="dot"></span><span class="lbl">${v}</span></div>`
+    `<div class="card${state[key] === v ? ' on' : ''}" data-v="${esc(v)}"><span class="dot"></span><span class="lbl">${esc(v)}</span></div>`
   ).join('');
   container.querySelectorAll('.card').forEach(el => {
     el.onclick = () => { state[key] = el.dataset.v; haptic('sel'); buildCards(container, items, key); };
   });
 }
-buildCards(document.getElementById('objectCards'), OBJECTS, 'object');
 buildCards(document.getElementById('shiftCards'), SHIFTS, 'shift');
 
+// ——— Виды работ: теги ———
 const tagBox = document.getElementById('workTags');
 function buildTags() {
   tagBox.innerHTML = WORKS.map(w =>
-    `<div class="tag${state.works.includes(w) ? ' on' : ''}" data-v="${w}">${w}</div>`
+    `<div class="tag${state.works.includes(w) ? ' on' : ''}" data-v="${esc(w)}">${esc(w)}</div>`
   ).join('');
   tagBox.querySelectorAll('.tag').forEach(el => {
     el.onclick = () => {
@@ -396,16 +491,26 @@ function buildTags() {
 }
 buildTags();
 
+// ——— Роли (обязательные) ———
 const mem = loadMemory();
 document.getElementById('roleFields').innerHTML = ROLES.map(([k, label]) => {
-  const opts = (mem[k] || []).map(v => `<option value="${v}">`).join('');
-  return `<div class="fld">
-    <label for="${k}">${label}</label>
-    <input type="text" id="${k}" list="dl_${k}" placeholder="Имя и фамилия" autocomplete="off">
+  const opts = (mem[k] || []).map(v => `<option value="${esc(v)}">`).join('');
+  return `<div class="fld" id="fld_${k}">
+    <label for="${k}">${label} <span class="req">*</span></label>
+    <input type="text" id="${k}" list="dl_${k}" placeholder="Имя и фамилия или «—»" autocomplete="off">
     <datalist id="dl_${k}">${opts}</datalist>
   </div>`;
 }).join('');
 
+// снимаем подсветку ошибки при вводе
+ROLES.forEach(([k]) => {
+  document.getElementById(k).oninput = () => document.getElementById('fld_' + k).classList.remove('bad');
+});
+['date','hours','mulching_m2'].forEach(k => {
+  document.getElementById(k).oninput = () => document.getElementById('fld_' + k).classList.remove('bad');
+});
+
+// ——— Счётчики ———
 function buildCounts(containerId, items) {
   document.getElementById(containerId).innerHTML = items.map(([k, label]) =>
     `<div class="count zero" id="row_${k}">
@@ -446,28 +551,86 @@ document.getElementById('date').valueAsDate = new Date();
 const errBox = document.getElementById('err');
 const sendBtn = document.getElementById('send');
 
+function markBad(fldId) {
+  const el = document.getElementById(fldId);
+  if (el) el.classList.add('bad');
+}
+function clearBad() {
+  document.querySelectorAll('.fld.bad').forEach(el => el.classList.remove('bad'));
+}
+
 sendBtn.onclick = () => {
   errBox.style.display = 'none';
-
-  const date = document.getElementById('date').value;
-  if (!date) return fail('Укажите дату смены');
-  if (state.works.length === 0) return fail('Выберите хотя бы один вид работ');
+  clearBad();
 
   const val = id => (document.getElementById(id).value || '').trim();
-  const num = id => parseFloat(document.getElementById(id).value) || 0;
+  const num = id => parseFloat(document.getElementById(id).value);
 
-  const [y, m, d] = date.split('-');
+  const problems = [];
+
+  // площадка
+  if (!val('object')) { markBad('fld_object'); problems.push('площадку'); }
+
+  // дата
+  if (!val('date')) { markBad('fld_date'); problems.push('дату смены'); }
+
+  // часы
+  if (val('hours') === '' || isNaN(num('hours')) || num('hours') < 0) {
+    markBad('fld_hours'); problems.push('часы');
+  }
+
+  // мульчирование
+  if (val('mulching_m2') === '' || isNaN(num('mulching_m2')) || num('mulching_m2') < 0) {
+    markBad('fld_mulching_m2'); problems.push('мульчирование');
+  }
+
+  // ФИО — все обязательны
+  const emptyRoles = [];
+  ROLES.forEach(([k, label]) => {
+    if (!val(k)) { markBad('fld_' + k); emptyRoles.push(label); }
+  });
+
+  if (emptyRoles.length) {
+    const msg = emptyRoles.length === ROLES.length
+      ? 'Заполните все поля руководящего состава. Если роли на смене не было — поставьте «—»'
+      : 'Не заполнено: ' + emptyRoles.join(', ') + '. Поставьте «—», если этой роли не было';
+    errBox.textContent = msg;
+    errBox.style.display = 'block';
+    haptic('error');
+    document.querySelector('.fld.bad').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  if (problems.length) {
+    errBox.textContent = 'Укажите: ' + problems.join(', ');
+    errBox.style.display = 'block';
+    haptic('error');
+    document.querySelector('.fld.bad').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  if (state.works.length === 0) {
+    errBox.textContent = 'Выберите хотя бы один вид работ';
+    errBox.style.display = 'block';
+    haptic('error');
+    return;
+  }
+
+  const numOr0 = id => parseFloat(document.getElementById(id).value) || 0;
+  const [y, m, d] = val('date').split('-');
+
   const payload = {
-    object: state.object,
+    object: val('object'),
     date: d + '.' + m + '.' + y,
     shift: state.shift,
-    hours: num('hours'),
+    hours: numOr0('hours'),
     work_types: state.works,
-    mulching_m2: num('mulching_m2'),
+    mulching_m2: numOr0('mulching_m2'),
+    comment: val('comment'),
     chat_id: (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id : null
   };
   ROLES.forEach(([k]) => { payload[k] = val(k); rememberFio(k, val(k)); });
-  CREW.concat(PLANTS, TECH).forEach(([k]) => { payload[k] = num(k); });
+  CREW.concat(PLANTS, TECH).forEach(([k]) => { payload[k] = numOr0(k); });
 
   sendBtn.disabled = true;
   sendBtn.textContent = 'Отправляем…';
@@ -487,15 +650,11 @@ sendBtn.onclick = () => {
   .catch(() => {
     sendBtn.disabled = false;
     sendBtn.textContent = 'Отправить отчёт';
-    fail('Не удалось отправить. Проверьте связь и попробуйте снова');
+    errBox.textContent = 'Не удалось отправить. Проверьте связь и попробуйте снова';
+    errBox.style.display = 'block';
+    haptic('error');
   });
 };
-
-function fail(msg) {
-  errBox.textContent = msg;
-  errBox.style.display = 'block';
-  haptic('error');
-}
 </script>
 </body>
 </html>
