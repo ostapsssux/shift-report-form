@@ -66,6 +66,38 @@
     font-size: 12.5px; font-weight: 700; color: var(--ink-soft);
     margin: 0 0 13px; letter-spacing: .01em;
   }
+  /* ——— Блок правил ——— */
+  .rules {
+    background: linear-gradient(168deg, #FFFDF4 0%, #FFF9E8 100%);
+    border-radius: 22px; padding: 17px 18px; margin: 14px 0;
+    box-shadow: var(--sh-2), inset 0 1px 0 rgba(255,255,255,.9),
+                inset 0 0 0 1.5px rgba(214,168,48,.25);
+  }
+  .rules h2 {
+    font-size: 12.5px; font-weight: 700; color: #9A7A1E;
+    margin: 0 0 10px; letter-spacing: .01em;
+  }
+  .rules ol { margin: 0; padding-left: 20px; }
+  .rules li {
+    font-size: 14.5px; font-weight: 600; line-height: 1.4;
+    margin-bottom: 7px; color: var(--ink);
+  }
+  .rules li:last-child { margin-bottom: 0; }
+
+  /* ——— Заблокированный счётчик ——— */
+  .count.locked {
+    opacity: .45;
+    background: linear-gradient(170deg, #F2F4F1, #EAEEE8);
+    box-shadow: var(--sh-1);
+  }
+  .count.locked button { pointer-events: none; }
+  .count.locked input { pointer-events: none; }
+  .lockmsg {
+    font-size: 12.5px; color: var(--ink-soft); font-weight: 600;
+    margin: 10px 0 0; line-height: 1.35; display: none;
+  }
+  .lockmsg.show { display: block; }
+
   section > .hint {
     font-size: 12.5px; color: var(--ink-soft); font-weight: 500;
     margin: -6px 0 13px; line-height: 1.35;
@@ -292,6 +324,14 @@
     <p>Заполните и отправьте — данные уйдут в таблицу</p>
   </header>
 
+  <div class="rules">
+    <h2>Правила заполнения</h2>
+    <ol>
+      <li>На одну бригаду — одна форма.</li>
+      <li>В одной форме могут быть либо кустарники и многолетники, либо деревья.</li>
+    </ol>
+  </div>
+
   <section>
     <h2>Площадка</h2>
     <div class="fld" id="fld_object">
@@ -332,6 +372,7 @@
   <section>
     <h2>Растения</h2>
     <div id="plantCounts"></div>
+    <p class="lockmsg" id="plantLockMsg"></p>
   </section>
 
   <section>
@@ -415,7 +456,7 @@ const ROLES = [
 ];
 const CREW   = [['gardener_count','Садовник'], ['installer_count','Монтажник'], ['worker_count','Рабочий']];
 const PLANTS = [['trees_count','Деревья'], ['bushes_count','Кусты'], ['perennials_count','Многолетники']];
-const TECH   = [['manipulator_count','Манипулятор'], ['loader_count','Погрузчик'], ['tractor_count','Трактор'], ['manitou_count','Маниту']];
+const TECH   = [['manipulator_count','Манипулятор'], ['loader_count','Погрузчик'], ['tractor_count','Трактор'], ['manitou_count','Маниту'], ['crane_count','Кран']];
 
 let tg = null;
 try { tg = window.Telegram.WebApp; tg.ready(); tg.expand(); } catch (e) {}
@@ -524,18 +565,60 @@ function paintRow(key, n) {
   row.classList.toggle('zero', n === 0);
   row.classList.toggle('hot', n > 0);
 }
+
+/* ——— Правило 2: деревья ИЛИ кусты+многолетники ——— */
+const TREE_KEY = 'trees_count';
+const SHRUB_KEYS = ['bushes_count', 'perennials_count'];
+
+function getCount(k) { return parseInt(document.getElementById(k).value, 10) || 0; }
+
+function setLocked(key, locked) {
+  const row = document.getElementById('row_' + key);
+  row.classList.toggle('locked', locked);
+  if (locked) {
+    document.getElementById(key).value = 0;
+    paintRow(key, 0);
+  }
+}
+
+function applyPlantRule() {
+  const trees = getCount(TREE_KEY);
+  const shrubs = SHRUB_KEYS.reduce((sum, k) => sum + getCount(k), 0);
+  const msg = document.getElementById('plantLockMsg');
+
+  if (trees > 0) {
+    SHRUB_KEYS.forEach(k => setLocked(k, true));
+    setLocked(TREE_KEY, false);
+    msg.textContent = 'Указаны деревья — кусты и многолетники в этой форме недоступны. Для них заполните отдельную форму.';
+    msg.classList.add('show');
+  } else if (shrubs > 0) {
+    setLocked(TREE_KEY, true);
+    SHRUB_KEYS.forEach(k => setLocked(k, false));
+    msg.textContent = 'Указаны кусты или многолетники — деревья в этой форме недоступны. Для них заполните отдельную форму.';
+    msg.classList.add('show');
+  } else {
+    setLocked(TREE_KEY, false);
+    SHRUB_KEYS.forEach(k => setLocked(k, false));
+    msg.classList.remove('show');
+  }
+}
 document.querySelectorAll('.count button').forEach(btn => {
   btn.onclick = () => {
     const inp = document.getElementById(btn.dataset.k);
     const next = Math.max(0, (parseInt(inp.value, 10) || 0) + parseInt(btn.dataset.d, 10));
     inp.value = next;
     paintRow(btn.dataset.k, next);
+    applyPlantRule();
     haptic('sel');
   };
 });
 document.querySelectorAll('.count input').forEach(inp => {
-  inp.oninput = () => paintRow(inp.id, parseInt(inp.value, 10) || 0);
+  inp.oninput = () => {
+    paintRow(inp.id, parseInt(inp.value, 10) || 0);
+    applyPlantRule();
+  };
 });
+applyPlantRule();
 
 document.getElementById('date').valueAsDate = new Date();
 
@@ -605,6 +688,25 @@ sendBtn.onclick = () => {
     errBox.textContent = 'Выберите хотя бы один вид работ';
     errBox.style.display = 'block';
     haptic('error');
+    return;
+  }
+
+  // Правило 2: деревья и кусты/многолетники нельзя смешивать в одной форме
+  const treesN = getCount('trees_count');
+  const shrubsN = getCount('bushes_count') + getCount('perennials_count');
+  if (treesN > 0 && shrubsN > 0) {
+    errBox.textContent = 'В одной форме нельзя указывать и деревья, и кусты/многолетники. Заполните две отдельные формы';
+    errBox.style.display = 'block';
+    haptic('error');
+    document.getElementById('row_trees_count').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  if (treesN === 0 && shrubsN === 0) {
+    errBox.textContent = 'Укажите количество деревьев либо кустов/многолетников';
+    errBox.style.display = 'block';
+    haptic('error');
+    document.getElementById('row_trees_count').scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
 
